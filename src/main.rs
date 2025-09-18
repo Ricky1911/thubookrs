@@ -1,11 +1,11 @@
 use clap::{Arg, ArgAction, command, value_parser};
-use tokio;
+use tokio_util::sync::CancellationToken;
 
-mod crawler;
+mod download;
 mod pre_process;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = command!().version("1.0.0").author("Ricky1911").about(
         "Download e-book from http://ereserves.lib.tsinghua.edu.cn. By default, the number of processes is four and the temporary images WILL BE preserved. 
         For example, \"thubookrs https://ereserves.lib.tsinghua.edu.cn/bookDetail/c01e1db11c4041a39db463e810bac8f94af518935a1ec46ef --token eyJhb...\". 
@@ -19,11 +19,24 @@ async fn main() {
     .arg(Arg::new("del_img").required(false).short('d').long("del-img").help("Optional. Delete the temporary images.").action(ArgAction::SetTrue))
     .arg(Arg::new("auto_resize").required(false).short('r').long("auto-resize").help("Optional. Automatically unify page sizes.").action(ArgAction::SetTrue))
     .get_matches();
+
     let url = matches.get_one::<String>("url").unwrap();
     let token = matches.get_one::<String>("token").unwrap();
     let thread_number = matches.get_one::<i32>("thread_number").unwrap();
     let quality = matches.get_one::<i32>("quality").unwrap();
     let del_img = matches.get_one::<bool>("del_img").unwrap();
     let auto_resize = matches.get_one::<bool>("auto_resize").unwrap();
-    let _ = pre_process::get_scan_id(url, token).await.unwrap();
+
+    let pre_processor = pre_process::Preprocessor::new()?;
+    let task = pre_processor.parse(url, token).await?;
+    let downloader = download::Downloader::new()?;
+    let cancel = CancellationToken::new();
+    let save_dir = std::env::current_dir()?.join("downloads").join(&task.book_real_id);
+    tokio::select! {
+        _ = tokio::signal::ctrl_c() => {
+            cancel.cancel();
+        },
+        _ = downloader.download_imgs(task, &save_dir, *thread_number as usize, cancel.clone()) => {}
+    }
+    Ok(())
 }

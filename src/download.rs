@@ -48,7 +48,7 @@ impl Downloader {
         filename: &str,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let url = "https://ereserves.lib.tsinghua.edu.cn/readkernel/JPGFile/DownJPGJsNetPage";
-        let save_path = save_dir.join(&filename);
+        let save_path = save_dir.join(filename);
         let res = self
             .client
             .get(url)
@@ -76,7 +76,7 @@ impl Downloader {
         save_dir: &Path,
         thread_num: usize,
         cancel: tokio_util::sync::CancellationToken,
-    ) -> Result<(), ()> {
+    ) -> bool {
         if !save_dir.exists() {
             fs::create_dir_all(save_dir).unwrap();
         }
@@ -95,10 +95,10 @@ impl Downloader {
                     page_num,
                     img_path
                         .split('/')
-                        .last()
+                        .next_back()
                         .unwrap()
                         .split('.')
-                        .last()
+                        .next_back()
                         .unwrap()
                 );
                 let path = save_dir.join(&filename);
@@ -124,17 +124,16 @@ impl Downloader {
             }
         }
 
-        let mut failed = false;
+        let mut success = true;
         for handle in handles {
             let result = handle.await;
-            if let Ok(result) = result {
-                if let Err(e) = result {
-                    println!("{}" , e);
-                    failed = true;
+            if let Ok(result) = result
+                && let Err(e) = result {
+                    println!("{}", e);
+                    success = false;
                 }
-            }
         }
         runtime.shutdown_background();
-        if failed { Err(()) } else { Ok(()) }
+        success
     }
 }

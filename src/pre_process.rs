@@ -8,13 +8,13 @@ use serde_json::Value;
 pub struct DownloadTask {
     pub book_real_id: String,
     pub botu_read_kernel: String,
-    pub page_urls: Vec<Vec<String>>
+    pub page_urls: Vec<Vec<String>>,
 }
 
 pub struct Preprocessor {
     client: Client,
     client_no_redirect: Client,
-    cookie_store: Arc<CookieStoreMutex>
+    cookie_store: Arc<CookieStoreMutex>,
 }
 
 impl Preprocessor {
@@ -33,7 +33,7 @@ impl Preprocessor {
                 .cookie_provider(Arc::clone(&cookie_store))
                 .default_headers(default_headers)
                 .build()?,
-            cookie_store
+            cookie_store,
         })
     }
 
@@ -166,13 +166,21 @@ impl Preprocessor {
         Ok(page_urls)
     }
 
-    pub async fn parse(&self, url: &str, token: &str) -> Result<DownloadTask, Box<dyn std::error::Error>> {
+    pub async fn parse(
+        &self,
+        url: &str,
+        token: &str,
+    ) -> Result<DownloadTask, Box<dyn std::error::Error>> {
         let (botu_read_kernel, book_real_id, scan_id) = self.get_scan_id(url, token).await?;
         let emids = self.get_book_chapters(&botu_read_kernel, &scan_id).await?;
         let page_urls = self
             .get_book_pages(&botu_read_kernel, &book_real_id, emids)
             .await?;
         self.cookie_store.lock().unwrap().clear();
-        Ok(DownloadTask { book_real_id, botu_read_kernel, page_urls })
+        Ok(DownloadTask {
+            book_real_id,
+            botu_read_kernel,
+            page_urls,
+        })
     }
 }

@@ -3,11 +3,12 @@ use tokio_util::sync::CancellationToken;
 
 mod download;
 mod pre_process;
+mod convert;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = command!().version("1.0.0").author("Ricky1911").about(
-        "Download e-book from http://ereserves.lib.tsinghua.edu.cn. By default, the number of processes is four and the temporary images WILL BE preserved. 
+        "Download e-book from http://ereserves.lib.tsinghua.edu.cn. By default, the number of threads is four and the temporary images WILL BE preserved. 
         For example, \"thubookrs https://ereserves.lib.tsinghua.edu.cn/bookDetail/c01e1db11c4041a39db463e810bac8f94af518935a1ec46ef --token eyJhb...\". 
         Note that you need to manually login the ereserves website and obtain the token from the FIRST request after login, 
         like \"/index?token=xxx\", due to two-factor authentication (2FA)."
@@ -32,11 +33,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let downloader = download::Downloader::new()?;
     let cancel = CancellationToken::new();
     let save_dir = std::env::current_dir()?.join("downloads").join(&task.book_real_id);
-    tokio::select! {
+    let success = tokio::select! {
         _ = tokio::signal::ctrl_c() => {
             cancel.cancel();
+            false
         },
-        _ = downloader.download_imgs(task, &save_dir, *thread_number as usize, cancel.clone()) => {}
+        result = downloader.download_imgs(task, &save_dir, *thread_number as usize, cancel.clone()) => { result }
+    };
+    if !success {
+        return Err(Box::new(std::io::Error::other("failed")).into())
     }
+
     Ok(())
 }

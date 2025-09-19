@@ -1,3 +1,5 @@
+use std::fs;
+
 use clap::{Arg, ArgAction, command, value_parser};
 use tokio_util::sync::CancellationToken;
 
@@ -43,6 +45,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if !success {
         return Err(Box::new(std::io::Error::other("failed")).into())
     }
-
+    println!("Download complete");
+    convert::convert(&save_dir, &save_dir.with_extension("pdf"), *quality, *auto_resize).await?;
+    println!("Convert complete");
+    if *del_img {
+        fs::remove_dir_all(&save_dir)?;
+    }
     Ok(())
 }

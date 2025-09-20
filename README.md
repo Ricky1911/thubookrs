@@ -8,7 +8,7 @@
 
 本项目是用rust对 [TsinghuaBookCrawler](https://github.com/dylanyang17/TsinghuaBookCrawler) 项目进行的重写，在保留其原有的全部功能的同时部分提升了性能，并且可以开箱即用无需配置环境。
 
-代码上很多参考了原项目，感谢原项目开发者 dylanyang17 允许我借鉴其代码，同时一并感谢原项目的其他贡献者。
+代码上很多参考了原项目，感谢原项目开发者 [dylanyang17](https://github.com/dylanyang17) 允许我借鉴其代码，同时一并感谢原项目的其他贡献者。
 
 此工具**仅供清华师生学习**之用，请在使用过程中注意版权问题。使用此工具造成的一切不良影响与作者无关。
 
@@ -38,7 +38,7 @@ cargo build -r
 
 ### 基础使用
 
-在文件thubookrs.exe所在的目录打开命令行，输入```./thubookrs --help```可获取帮助信息。
+在文件thubookrs.exe所在的目录打开命令行，输入```thubookrs --help```可获取帮助信息。
 ```
 Usage: thubookrs.exe [OPTIONS] --token <token> <url>
 

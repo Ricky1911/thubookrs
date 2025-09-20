@@ -128,10 +128,11 @@ impl Downloader {
         for handle in handles {
             let result = handle.await;
             if let Ok(result) = result
-                && let Err(e) = result {
-                    println!("{}", e);
-                    success = false;
-                }
+                && let Err(e) = result
+            {
+                println!("{}", e);
+                success = false;
+            }
         }
         runtime.shutdown_background();
         success

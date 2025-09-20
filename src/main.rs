@@ -3,9 +3,9 @@ use std::fs;
 use clap::{Arg, ArgAction, command, value_parser};
 use tokio_util::sync::CancellationToken;
 
+mod convert;
 mod download;
 mod pre_process;
-mod convert;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -34,7 +34,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let task = pre_processor.parse(url, token).await?;
     let downloader = download::Downloader::new()?;
     let cancel = CancellationToken::new();
-    let save_dir = std::env::current_dir()?.join("downloads").join(&task.book_real_id);
+    let save_dir = std::env::current_dir()?
+        .join("downloads")
+        .join(&task.book_real_id);
     let success = tokio::select! {
         _ = tokio::signal::ctrl_c() => {
             cancel.cancel();
@@ -43,10 +45,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         result = downloader.download_imgs(task, &save_dir, *thread_number as usize, cancel.clone()) => { result }
     };
     if !success {
-        return Err(Box::new(std::io::Error::other("failed")).into())
+        return Err(Box::new(std::io::Error::other("failed")).into());
     }
     println!("Download complete");
-    convert::convert(&save_dir, &save_dir.with_extension("pdf"), *quality, *auto_resize).await?;
+    convert::convert(
+        &save_dir,
+        &save_dir.with_extension("pdf"),
+        *quality,
+        *auto_resize,
+    )
+    .await?;
     println!("Convert complete");
     if *del_img {
         fs::remove_dir_all(&save_dir)?;

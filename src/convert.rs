@@ -11,13 +11,14 @@ use std::{
 
 fn get_images(dir: &Path) -> Vec<PathBuf> {
     let mut result = Vec::new();
-    for entry in fs::read_dir(dir).expect(&format!("Can't open directory {}", dir.display())) {
-        if let Ok(entry) = entry {
-            if let Ok(filetype) = entry.file_type()
-                && filetype.is_file()
-            {
-                result.push(entry.file_name());
-            }
+    for entry in
+        fs::read_dir(dir).unwrap_or_else(|_| panic!("Can't open directory {}", dir.display()))
+    {
+        if let Ok(entry) = entry
+            && let Ok(filetype) = entry.file_type()
+            && filetype.is_file()
+        {
+            result.push(entry.file_name());
         }
     }
     result.sort_by(|a, b| {
@@ -72,7 +73,7 @@ async fn pre_process_imgs(
     if auto_resize {
         let mut size_count = HashMap::new();
         for img_path in imgs {
-            let img = ImageReader::open(&img_path)?.decode()?;
+            let img = ImageReader::open(img_path)?.decode()?;
             let width = img.width();
             let height = img.height();
             match size_count.get_mut(&(width, height)) {
@@ -87,8 +88,7 @@ async fn pre_process_imgs(
         common_size = size_count
             .drain()
             .max_by_key(|(_, count)| *count)
-            .map(|(size, _)| size)
-            .take();
+            .map(|(size, _)| size);
     }
     if let Some((width, height)) = common_size {
         println!("Auto resizing with width: {width}, height: {height}");

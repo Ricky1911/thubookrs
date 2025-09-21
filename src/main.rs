@@ -9,7 +9,7 @@ mod pre_process;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let matches = command!().version("1.0.0").author("Ricky1911").about(
+    let matches = command!().version(env!("CARGO_PKG_VERSION")).author("Ricky1911").about(
         "Download e-book from http://ereserves.lib.tsinghua.edu.cn. By default, the number of threads is four and the temporary images WILL BE preserved. 
         For example, \"thubookrs https://ereserves.lib.tsinghua.edu.cn/bookDetail/c01e1db11c4041a39db463e810bac8f94af518935a1ec46ef --token eyJhb...\". 
         Note that you need to manually login the ereserves website and obtain the token from the FIRST request after login, 
